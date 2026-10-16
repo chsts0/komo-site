@@ -32,9 +32,13 @@
   const grid = document.getElementById('casesGrid');
   const more = document.getElementById('casesMore');
   const empty = document.querySelector('.cases__empty');
-  const MOBILE_LIMIT = 4;
+  const mobile = window.matchMedia('(max-width: 860px)');
+  let currentTag = 'all';
+  let expanded = false;
 
   const applyFilter = (tag) => {
+    currentTag = tag;
+    const limit = mobile.matches ? 2 : 3;
     let shown = 0;
     let gridShown = 0;
     allCases.forEach((c) => {
@@ -42,23 +46,25 @@
       c.hidden = !ok;
       if (ok) shown++;
       if (c.parentElement === grid) {
-        c.classList.toggle('is-extra', ok && gridShown >= MOBILE_LIMIT);
+        c.classList.toggle('is-extra', ok && gridShown >= limit);
         if (ok) gridShown++;
       }
     });
     empty.hidden = shown > 0;
-    const hasExtra = gridShown > MOBILE_LIMIT;
-    grid.classList.toggle('is-collapsed', hasExtra);
-    more.hidden = !hasExtra;
+    const hasExtra = gridShown > limit;
+    grid.classList.toggle('is-collapsed', hasExtra && !expanded);
+    more.hidden = !hasExtra || expanded;
   };
 
   chips.forEach((chip) => {
     chip.addEventListener('click', () => {
       chips.forEach((c) => c.classList.toggle('is-on', c === chip));
+      expanded = false;
       applyFilter(chip.dataset.filter);
     });
   });
-  more.addEventListener('click', () => { grid.classList.remove('is-collapsed'); more.hidden = true; });
+  more.addEventListener('click', () => { expanded = true; applyFilter(currentTag); });
+  mobile.addEventListener('change', () => applyFilter(currentTag));
   applyFilter('all');
 
   // Поле «Другое» в анкете
