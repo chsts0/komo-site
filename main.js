@@ -1,12 +1,6 @@
 (() => {
-  const header = document.querySelector('.header');
   const burger = document.getElementById('burger');
   const nav = document.getElementById('nav');
-
-  // Фон шапки проявляется постепенно за первые 120px прокрутки
-  const onScroll = () => header.style.setProperty('--hdr', Math.min(window.scrollY / 120, 1).toFixed(3));
-  onScroll();
-  window.addEventListener('scroll', onScroll, { passive: true });
 
   // Бургер-меню
   const setMenu = (open) => {
