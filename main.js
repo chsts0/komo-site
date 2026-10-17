@@ -18,6 +18,18 @@
   nav.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
+  // Якорные ссылки: плавно едем к блоку, но не оставляем #блок в адресной строке
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href^="#"]');
+    if (!link || e.defaultPrevented) return;
+    const id = link.getAttribute('href').slice(1);
+    const target = id === 'top' ? document.body : document.getElementById(id);
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+
   // Кнопки услуг сразу отмечают услугу в анкете
   document.querySelectorAll('[data-service]').forEach((el) => {
     el.addEventListener('click', () => {
