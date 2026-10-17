@@ -25,3 +25,7 @@
 1. Залить в папку сайта всё, кроме `api/`, `vercel.json`, `.vercelignore`, `README.md`.
 2. Скопировать `server/config.example.php` в `server/config.php` и вписать токен бота и id чата.
 3. `.htaccess` сам переводит сайт на https без www, отдаёт `/api/lead` через `server/lead.php` и прячет служебные файлы.
+
+## Автозаливка
+
+После пуша в main GitHub Actions (`.github/workflows/deploy.yml`) заливает сайт на хостинг по FTP. Нужны секреты репо `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` и, если FTP-пользователь смотрит не в папку сайта, `FTP_DIR`.

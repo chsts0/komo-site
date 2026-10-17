@@ -1,0 +1,33 @@
+# После каждого пуша в main заливает сайт на хостинг reg.ru по FTP.
+# Секреты репо: FTP_SERVER, FTP_USERNAME, FTP_PASSWORD, по желанию FTP_DIR (папка сайта, по умолчанию ./).
+# server/config.php с токеном живёт только на хостинге: его нет в репо, и заливка его не трогает.
+name: Заливка на reg.ru
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_DIR || './' }}
+          protocol: ftps
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            api/**
+            vercel.json
+            .vercelignore
+            README.md
+            server/config.php
