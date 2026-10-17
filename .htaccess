@@ -12,7 +12,7 @@ RewriteRule ^ https://komoconsulting.ru%{REQUEST_URI} [L,R=301]
 RewriteRule ^api/lead$ server/lead.php [L]
 
 # Служебные файлы не отдаём
-RewriteRule ^(server/config(\.example)?\.php|README\.md|vercel\.json|api/.*)$ - [F,L]
+RewriteRule ^(server/config(\.example)?\.php|README\.md|vercel\.json|api/.*|\.ftp-deploy-sync-state\.json)$ - [F,L]
 
 # Адреса без .html: /privacy
 RewriteCond %{REQUEST_FILENAME} !-f
