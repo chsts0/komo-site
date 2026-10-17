@@ -8,17 +8,6 @@
   onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // Высота первого экрана считается один раз. На телефоне 100vh меняется, когда при скролле
-  // прячется адресная строка, и картинка с текстом дёргаются. Пересчитываем только при смене ширины.
-  let heroW = window.innerWidth;
-  const setHeroH = () => document.documentElement.style.setProperty('--hero-h', `${window.innerHeight}px`);
-  setHeroH();
-  window.addEventListener('resize', () => {
-    if (window.innerWidth === heroW) return;
-    heroW = window.innerWidth;
-    setHeroH();
-  });
-
   // Бургер-меню
   const setMenu = (open) => {
     document.body.classList.toggle('menu-open', open);
@@ -44,16 +33,18 @@
   const more = document.getElementById('casesMore');
   const empty = document.querySelector('.cases__empty');
   const mobile = window.matchMedia('(max-width: 860px)');
-  let currentTag = 'all';
   let expanded = false;
 
-  const applyFilter = (tag) => {
-    currentTag = tag;
+  // Можно выбрать несколько направлений: показываем кейсы, где есть хотя бы одно из них.
+  // «Все» сбрасывает выбор, а если снять все направления, снова включается «Все».
+  const selected = new Set();
+
+  const applyFilter = () => {
     const limit = mobile.matches ? 2 : 3;
     let shown = 0;
     let gridShown = 0;
     allCases.forEach((c) => {
-      const ok = tag === 'all' || c.dataset.tags.split(' ').includes(tag);
+      const ok = !selected.size || c.dataset.tags.split(' ').some((t) => selected.has(t));
       c.hidden = !ok;
       if (ok) shown++;
       if (c.parentElement === grid) {
@@ -69,14 +60,29 @@
 
   chips.forEach((chip) => {
     chip.addEventListener('click', () => {
-      chips.forEach((c) => c.classList.toggle('is-on', c === chip));
+      const tag = chip.dataset.filter;
+      if (tag === 'all') selected.clear();
+      else if (selected.has(tag)) selected.delete(tag);
+      else selected.add(tag);
+      chips.forEach((c) => {
+        const on = c.dataset.filter === 'all' ? !selected.size : selected.has(c.dataset.filter);
+        c.classList.toggle('is-on', on);
+        c.setAttribute('aria-pressed', String(on));
+      });
       expanded = false;
-      applyFilter(chip.dataset.filter);
+      applyFilter();
     });
   });
-  more.addEventListener('click', () => { expanded = true; applyFilter(currentTag); });
-  mobile.addEventListener('change', () => applyFilter(currentTag));
-  applyFilter('all');
+  more.addEventListener('click', () => { expanded = true; applyFilter(); });
+  mobile.addEventListener('change', applyFilter);
+  applyFilter();
+
+  // В вопросах открыт только один ответ. Новые браузеры делают это сами по name у details,
+  // для старых закрываем остальные вручную.
+  const faq = document.querySelectorAll('details[name="faq"]');
+  faq.forEach((d) => d.addEventListener('toggle', () => {
+    if (d.open) faq.forEach((o) => { if (o !== d) o.open = false; });
+  }));
 
   // Поле «Другое» в анкете
   document.querySelectorAll('input[data-other]').forEach((box) => {
