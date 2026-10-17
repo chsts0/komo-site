@@ -151,7 +151,8 @@ button, input, textarea { font: inherit; color: inherit; }
 .acc summary { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 28px 0; font-size: 22px; font-weight: 500; cursor: pointer; list-style: none; }
 .acc summary::-webkit-details-marker { display: none; }
 .acc summary::after { content: "+"; font-size: 28px; font-weight: 300; line-height: 1; }
-.acc details[open] summary::after { content: "−"; }
+.acc details.is-open summary::after { content: "−"; }
+.acc__body { overflow: hidden; }
 .acc details p { padding: 0 0 28px; max-width: 640px; font-size: 16px; color: var(--gray); }
 
 /* forms */

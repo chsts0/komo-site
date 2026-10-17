@@ -77,12 +77,32 @@
   mobile.addEventListener('change', applyFilter);
   applyFilter();
 
-  // В вопросах открыт только один ответ. Новые браузеры делают это сами по name у details,
-  // для старых закрываем остальные вручную.
-  const faq = document.querySelectorAll('details[name="faq"]');
-  faq.forEach((d) => d.addEventListener('toggle', () => {
-    if (d.open) faq.forEach((o) => { if (o !== d) o.open = false; });
-  }));
+  // Вопросы: открыт только один ответ, открытие и закрытие плавные
+  const faq = document.querySelectorAll('.acc details');
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const slide = (d, open) => {
+    const body = d.querySelector('.acc__body');
+    body.getAnimations().forEach((a) => a.cancel());
+    if (open) d.open = true;
+    const h = body.scrollHeight;
+    if (still.matches) { d.open = open; return; }
+    const anim = body.animate(
+      open ? [{ height: '0px', opacity: 0 }, { height: `${h}px`, opacity: 1 }]
+           : [{ height: `${h}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
+      { duration: open ? 320 : 240, easing: 'cubic-bezier(.4, 0, .2, 1)' },
+    );
+    if (!open) anim.onfinish = () => { d.open = false; };
+  };
+  faq.forEach((d) => {
+    d.querySelector('summary').addEventListener('click', (e) => {
+      e.preventDefault();
+      faq.forEach((o) => { if (o !== d && o.classList.contains('is-open')) { o.classList.remove('is-open'); slide(o, false); } });
+      const willOpen = !d.classList.contains('is-open');
+      d.classList.toggle('is-open', willOpen);
+      slide(d, willOpen);
+    });
+    d.classList.toggle('is-open', d.open);
+  });
 
   // Поле «Другое» в анкете
   document.querySelectorAll('input[data-other]').forEach((box) => {
