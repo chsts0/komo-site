@@ -188,13 +188,14 @@ button, input, textarea { font: inherit; color: inherit; }
 /* contacts */
 .contacts { display: flex; justify-content: space-between; gap: 80px; }
 .display--contacts { font-size: clamp(44px, 6.7vw, 96px); letter-spacing: -.02em; }
-.people { display: flex; flex-direction: column; gap: 28px; margin-top: 48px; }
+.people { display: flex; gap: 28px 40px; margin-top: 48px; }
 .people__n { font-size: 18px; font-weight: 500; }
 .people .muted { font-size: 14px; font-weight: 400; margin-top: 4px; }
-.people__p { display: inline-block; margin-top: 8px; font-size: 20px; font-weight: 500; }
-.links { width: 560px; flex: none; border-top: 1px solid var(--line); }
-.links li { border-bottom: 1px solid var(--line); }
-.links a { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; }
+.people__p { display: block; width: fit-content; margin-top: 8px; font-size: 20px; font-weight: 500; line-height: 1.2; }
+/* Ссылки растягиваются на высоту левой колонки: заголовок и контакты */
+.links { width: 560px; flex: none; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.links li { flex: 1; display: flex; border-bottom: 1px solid var(--line); }
+.links a { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
 .links b { display: block; font-size: 28px; font-weight: 500; text-transform: uppercase; }
 .links small { display: block; margin-top: 4px; font-size: 14px; font-weight: 400; color: var(--gray); }
 .links a:hover .arrow-c { transform: translateX(3px); }
@@ -258,6 +259,7 @@ button, input, textarea { font: inherit; color: inherit; }
   .about__img { width: 42%; }
   .faq, .formsec, .contacts { flex-direction: column; gap: 48px; }
   .form, .links, .acc { width: 100%; }
+  .links a { padding: 24px 0; }
   .cases { grid-template-columns: repeat(2, 1fr); }
   .svc-hero { flex-direction: column; align-items: flex-start; }
   .svc-hero__side { width: 100%; max-width: 560px; }
@@ -329,7 +331,7 @@ button, input, textarea { font: inherit; color: inherit; }
   .form__row { grid-template-columns: 1fr; gap: 36px; }
   .form__send { flex-direction: column; align-items: flex-start; gap: 16px; }
 
-  .people { margin-top: 32px; }
+  .people { flex-direction: column; margin-top: 32px; }
   .links b { font-size: 22px; }
   .footer { flex-direction: column; align-items: flex-start; gap: 16px; margin-top: 40px; }
   .footer p:nth-of-type(1) { width: auto; }
