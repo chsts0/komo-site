@@ -18,6 +18,19 @@
   nav.addEventListener('click', (e) => { if (e.target.closest('a')) setMenu(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
+  // Плавная прокрутка колесом и тачпадом. На телефонах свайп остаётся родным,
+  // а Lenis только плавно возит к якорям. Своя анимация не зависит от настройки
+  // «уменьшить движение» в системе, из-за которой браузер прыгал к блокам рывком
+  const lenis = window.Lenis ? new window.Lenis({ lerp: 0.1, wheelMultiplier: 1 }) : null;
+  if (lenis) {
+    const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); };
+    requestAnimationFrame(raf);
+  }
+  const scrollToEl = (el) => {
+    if (lenis) lenis.scrollTo(el, { duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 3) });
+    else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // Якорные ссылки: плавно едем к блоку, но не оставляем #блок в адресной строке
   document.addEventListener('click', (e) => {
     const link = e.target.closest('a[href^="#"]');
@@ -26,7 +39,7 @@
     const target = id === 'top' ? document.body : document.getElementById(id);
     if (!target) return;
     e.preventDefault();
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToEl(target);
   });
 
   // Кнопки услуг сразу отмечают услугу в анкете
@@ -106,13 +119,11 @@
 
   // Вопросы: открыт только один ответ, открытие и закрытие плавные
   const faq = document.querySelectorAll('.acc details');
-  const still = window.matchMedia('(prefers-reduced-motion: reduce)');
   const slide = (d, open) => {
     const body = d.querySelector('.acc__body');
     body.getAnimations().forEach((a) => a.cancel());
     if (open) d.open = true;
     const h = body.scrollHeight;
-    if (still.matches) { d.open = open; return; }
     const anim = body.animate(
       open ? [{ height: '0px', opacity: 0 }, { height: `${h}px`, opacity: 1 }]
            : [{ height: `${h}px`, opacity: 1 }, { height: '0px', opacity: 0 }],
