@@ -35,7 +35,7 @@
   const mobile = window.matchMedia('(max-width: 860px)');
   let expanded = false;
 
-  // Можно выбрать несколько направлений: показываем кейсы, где есть хотя бы одно из них.
+  // Можно выбрать несколько направлений: показываем кейсы, у которых есть все выбранные.
   // «Все» сбрасывает выбор, а если снять все направления, снова включается «Все».
   const selected = new Set();
 
@@ -44,7 +44,7 @@
     let shown = 0;
     let gridShown = 0;
     allCases.forEach((c) => {
-      const ok = !selected.size || c.dataset.tags.split(' ').some((t) => selected.has(t));
+      const ok = !selected.size || [...selected].every((t) => c.dataset.tags.split(' ').includes(t));
       c.hidden = !ok;
       if (ok) shown++;
       if (c.parentElement === grid) {
