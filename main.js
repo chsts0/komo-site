@@ -8,6 +8,17 @@
   onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
 
+  // Высота первого экрана считается один раз. На телефоне 100vh меняется, когда при скролле
+  // прячется адресная строка, и картинка с текстом дёргаются. Пересчитываем только при смене ширины.
+  let heroW = window.innerWidth;
+  const setHeroH = () => document.documentElement.style.setProperty('--hero-h', `${window.innerHeight}px`);
+  setHeroH();
+  window.addEventListener('resize', () => {
+    if (window.innerWidth === heroW) return;
+    heroW = window.innerWidth;
+    setHeroH();
+  });
+
   // Бургер-меню
   const setMenu = (open) => {
     document.body.classList.toggle('menu-open', open);
