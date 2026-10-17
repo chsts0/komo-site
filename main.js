@@ -3,8 +3,8 @@
   const burger = document.getElementById('burger');
   const nav = document.getElementById('nav');
 
-  // Шапка темнеет после первого экрана
-  const onScroll = () => header.classList.toggle('is-solid', window.scrollY > 40);
+  // Фон шапки проявляется постепенно за первые 120px прокрутки
+  const onScroll = () => header.style.setProperty('--hdr', Math.min(window.scrollY / 120, 1).toFixed(3));
   onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
 
@@ -28,66 +28,81 @@
     e.preventDefault();
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
-  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 
   // Кнопки услуг сразу отмечают услугу в анкете
-  document.querySelectorAll('[data-service]').forEach((el) => {
-    el.addEventListener('click', () => {
-      const box = document.querySelector(`#brief input[name="need"][value="${el.dataset.service}"]`);
-      if (box) box.checked = true;
-    });
-  });
-
-  // Фильтр кейсов
-  const chips = document.querySelectorAll('.filter .chip');
-  const allCases = document.querySelectorAll('#cases .case');
-  const grid = document.getElementById('casesGrid');
-  const more = document.getElementById('casesMore');
-  const empty = document.querySelector('.cases__empty');
-  const mobile = window.matchMedia('(max-width: 860px)');
-  let expanded = false;
-
-  // Можно выбрать несколько направлений: показываем кейсы, у которых есть все выбранные.
-  // «Все» сбрасывает выбор, а если снять все направления, снова включается «Все».
-  const selected = new Set();
-
-  const applyFilter = () => {
-    const limit = mobile.matches ? 2 : 3;
-    let shown = 0;
-    let gridShown = 0;
-    allCases.forEach((c) => {
-      const ok = !selected.size || [...selected].every((t) => c.dataset.tags.split(' ').includes(t));
-      c.hidden = !ok;
-      if (ok) shown++;
-      if (c.parentElement === grid) {
-        c.classList.toggle('is-extra', ok && gridShown >= limit);
-        if (ok) gridShown++;
-      }
-    });
-    empty.hidden = shown > 0;
-    const hasExtra = gridShown > limit;
-    grid.classList.toggle('is-collapsed', hasExtra && !expanded);
-    more.hidden = !hasExtra || expanded;
+  const pickService = (value) => {
+    const box = document.querySelector(`#brief input[name="need"][value="${value}"]`);
+    if (box) box.checked = true;
+    return box;
   };
-
-  chips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const tag = chip.dataset.filter;
-      if (tag === 'all') selected.clear();
-      else if (selected.has(tag)) selected.delete(tag);
-      else selected.add(tag);
-      chips.forEach((c) => {
-        const on = c.dataset.filter === 'all' ? !selected.size : selected.has(c.dataset.filter);
-        c.classList.toggle('is-on', on);
-        c.setAttribute('aria-pressed', String(on));
-      });
-      expanded = false;
-      applyFilter();
-    });
+  document.querySelectorAll('[data-service]').forEach((el) => {
+    el.addEventListener('click', () => pickService(el.dataset.service));
   });
-  more.addEventListener('click', () => { expanded = true; applyFilter(); });
-  mobile.addEventListener('change', applyFilter);
-  applyFilter();
+
+  // Пришли со страницы услуги (/?service=design) или по ссылке вида /#cases:
+  // отмечаем услугу, едем к нужному блоку и чистим адресную строку
+  const SERVICES = { design: 'Дизайн', project: 'Проектирование', build: 'Строительно-монтажные работы', supply: 'Снабжение', support: 'Сопровождение', turnkey: 'Под ключ' };
+  const fromService = SERVICES[new URLSearchParams(location.search).get('service')];
+  const landing = fromService && pickService(fromService) ? 'brief' : location.hash.slice(1);
+  if (location.hash || location.search) history.replaceState(null, '', location.pathname);
+  const landOn = document.getElementById(landing);
+  if (landOn) {
+    landOn.scrollIntoView({ behavior: 'instant', block: 'start' });
+    window.addEventListener('load', () => landOn.scrollIntoView({ behavior: 'instant', block: 'start' }), { once: true });
+  }
+
+  // Фильтр кейсов (есть только на главной)
+  if (document.getElementById('casesGrid')) {
+    const chips = document.querySelectorAll('.filter .chip');
+    const allCases = document.querySelectorAll('#cases .case');
+    const grid = document.getElementById('casesGrid');
+    const more = document.getElementById('casesMore');
+    const empty = document.querySelector('.cases__empty');
+    const mobile = window.matchMedia('(max-width: 860px)');
+    let expanded = false;
+
+    // Можно выбрать несколько направлений: показываем кейсы, у которых есть все выбранные.
+    // «Все» сбрасывает выбор, а если снять все направления, снова включается «Все».
+    const selected = new Set();
+
+    const applyFilter = () => {
+      const limit = mobile.matches ? 2 : 3;
+      let shown = 0;
+      let gridShown = 0;
+      allCases.forEach((c) => {
+        const ok = !selected.size || [...selected].every((t) => c.dataset.tags.split(' ').includes(t));
+        c.hidden = !ok;
+        if (ok) shown++;
+        if (c.parentElement === grid) {
+          c.classList.toggle('is-extra', ok && gridShown >= limit);
+          if (ok) gridShown++;
+        }
+      });
+      empty.hidden = shown > 0;
+      const hasExtra = gridShown > limit;
+      grid.classList.toggle('is-collapsed', hasExtra && !expanded);
+      more.hidden = !hasExtra || expanded;
+    };
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const tag = chip.dataset.filter;
+        if (tag === 'all') selected.clear();
+        else if (selected.has(tag)) selected.delete(tag);
+        else selected.add(tag);
+        chips.forEach((c) => {
+          const on = c.dataset.filter === 'all' ? !selected.size : selected.has(c.dataset.filter);
+          c.classList.toggle('is-on', on);
+          c.setAttribute('aria-pressed', String(on));
+        });
+        expanded = false;
+        applyFilter();
+      });
+    });
+    more.addEventListener('click', () => { expanded = true; applyFilter(); });
+    mobile.addEventListener('change', applyFilter);
+    applyFilter();
+  }
 
   // Вопросы: открыт только один ответ, открытие и закрытие плавные
   const faq = document.querySelectorAll('.acc details');
@@ -161,12 +176,10 @@
         });
         if (!res.ok) throw new Error(String(res.status));
         form.reset();
-        form.querySelectorAll('.field--other').forEach((f) => { f.hidden = true; });
-        status.textContent = 'Спасибо! Анкета у нас, скоро свяжемся.';
+        location.href = form.dataset.kind === 'job' ? '/thanks-job' : '/thanks';
       } catch (err) {
         status.textContent = 'Не получилось отправить. Напишите нам в Telegram @komo_consulting или на komoconsalting@yandex.ru.';
         status.classList.add('is-err');
-      } finally {
         btn.disabled = false;
       }
     });

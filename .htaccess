@@ -1,5 +1,6 @@
 AddDefaultCharset utf-8
 Options -Indexes
+ErrorDocument 404 /404.html
 
 RewriteEngine On
 

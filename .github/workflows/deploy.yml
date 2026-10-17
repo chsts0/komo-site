@@ -18,7 +18,7 @@ jobs:
       # Хостинг кэширует css и js на 45 дней: даём им новый адрес на каждую заливку,
       # чтобы браузеры сразу брали свежие файлы
       - name: Версия для css и js
-        run: sed -i "s#/styles.css\"#/styles.css?v=${GITHUB_SHA::8}\"#; s#/main.js\"#/main.js?v=${GITHUB_SHA::8}\"#" index.html privacy.html
+        run: find . -name "*.html" -not -path "./.git/*" -exec sed -i "s#/styles.css\"#/styles.css?v=${GITHUB_SHA::8}\"#; s#/main.js\"#/main.js?v=${GITHUB_SHA::8}\"#" {} +
       - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
