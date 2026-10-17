@@ -3,8 +3,8 @@ Options -Indexes
 
 RewriteEngine On
 
-# Всё на https и без www
-RewriteCond %{HTTPS} off [OR]
+# Без www. На http → https хостинг перекидывает сам: Apache стоит за nginx
+# и всегда видит запрос как http, поэтому проверка %{HTTPS} тут даёт вечный редирект
 RewriteCond %{HTTP_HOST} ^www\. [NC]
 RewriteRule ^ https://komoconsulting.ru%{REQUEST_URI} [L,R=301]
 
