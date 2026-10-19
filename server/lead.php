@@ -1,6 +1,9 @@
 <?php
 // Обычный хостинг с PHP (reg.ru): принимает анкету с сайта и пересылает её в Telegram.
-// Токен и id чата лежат в server/config.php (его нет в репо, см. config.example.php).
+// С хостинга reg.ru api.telegram.org не открывается, поэтому анкета сначала уходит
+// через функцию на Vercel (api/lead.js), которая уже сама шлёт в Telegram.
+// Если не вышло, пробуем Telegram напрямую, а в крайнем случае шлём письмо на почту.
+// Настройки в server/config.php (его нет в репо, см. config.example.php).
 
 const LABELS = [
   'client' => [
@@ -51,32 +54,51 @@ if (trim((string)($body['name'] ?? '')) === '' || trim((string)($body['contact']
 }
 
 $config = is_file(__DIR__ . '/config.php') ? require __DIR__ . '/config.php' : [];
+$relay = $config['relay_url'] ?? 'https://komo-site.vercel.app/api/lead';
 $token = $config['tg_bot_token'] ?? '';
 $chatId = $config['tg_chat_id'] ?? '';
-if (!$token || !$chatId) reply(500, ['ok' => false, 'error' => 'not configured']);
+$mailTo = $config['mail_to'] ?? 'komoconsalting@yandex.ru';
 
-$lines = ['<b>' . $form['title'] . '</b>'];
+function post_json($url, $data, $timeout) {
+  $ctx = stream_context_create(['http' => [
+    'method' => 'POST',
+    'header' => "Content-Type: application/json\r\n",
+    'content' => json_encode($data, JSON_UNESCAPED_UNICODE),
+    'timeout' => $timeout,
+    'ignore_errors' => true,
+  ]]);
+  $res = @file_get_contents($url, false, $ctx);
+  return $res !== false && (json_decode($res, true)['ok'] ?? false);
+}
+
+// 1. Через Vercel
+if ($relay && post_json($relay, $body, 8)) reply(200, ['ok' => true]);
+
+$lines = [$form['title']];
 foreach ($form['fields'] as [$key, $label]) {
   $raw = $body[$key] ?? '';
   $value = is_array($raw) ? implode(', ', array_map('strval', $raw)) : trim((string)$raw);
-  if ($value !== '') $lines[] = "<b>$label:</b> " . htmlspecialchars(clip($value), ENT_NOQUOTES);
+  if ($value !== '') $lines[] = "$label: " . clip($value);
 }
 
-$payload = json_encode([
-  'chat_id' => $chatId,
-  'text' => implode("\n", $lines),
-  'parse_mode' => 'HTML',
-  'disable_web_page_preview' => true,
-], JSON_UNESCAPED_UNICODE);
+// 2. Telegram напрямую, если с хостинга он вдруг откроется
+if ($token && $chatId) {
+  $html = array_map(fn($l) => htmlspecialchars($l, ENT_NOQUOTES), $lines);
+  $html[0] = '<b>' . $html[0] . '</b>';
+  $sent = post_json("https://api.telegram.org/bot$token/sendMessage", [
+    'chat_id' => $chatId,
+    'text' => implode("\n", $html),
+    'parse_mode' => 'HTML',
+    'disable_web_page_preview' => true,
+  ], 4);
+  if ($sent) reply(200, ['ok' => true]);
+}
 
-$ctx = stream_context_create(['http' => [
-  'method' => 'POST',
-  'header' => "Content-Type: application/json\r\n",
-  'content' => $payload,
-  'timeout' => 10,
-  'ignore_errors' => true,
-]]);
-$res = @file_get_contents("https://api.telegram.org/bot$token/sendMessage", false, $ctx);
-$ok = $res !== false && (json_decode($res, true)['ok'] ?? false);
+// 3. Письмо, чтобы анкета не потерялась
+if ($mailTo) {
+  $subject = '=?UTF-8?B?' . base64_encode($form['title'] . ' с сайта') . '?=';
+  $headers = "From: KOMO <noreply@komoconsulting.ru>\r\nContent-Type: text/plain; charset=utf-8\r\n";
+  if (@mail($mailTo, $subject, implode("\n", $lines), $headers)) reply(200, ['ok' => true]);
+}
 
-reply($ok ? 200 : 502, ['ok' => (bool)$ok]);
+reply(502, ['ok' => false]);
