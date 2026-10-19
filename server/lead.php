@@ -59,16 +59,30 @@ $token = $config['tg_bot_token'] ?? '';
 $chatId = $config['tg_chat_id'] ?? '';
 $mailTo = $config['mail_to'] ?? 'komoconsalting@yandex.ru';
 
+// У Vercel несколько адресов, и часть из них из России не отвечает.
+// Поэтому пробуем каждый адрес по очереди с коротким таймаутом на соединение.
 function post_json($url, $data, $timeout) {
-  $ctx = stream_context_create(['http' => [
-    'method' => 'POST',
-    'header' => "Content-Type: application/json\r\n",
-    'content' => json_encode($data, JSON_UNESCAPED_UNICODE),
-    'timeout' => $timeout,
-    'ignore_errors' => true,
-  ]]);
-  $res = @file_get_contents($url, false, $ctx);
-  return $res !== false && (json_decode($res, true)['ok'] ?? false);
+  $host = parse_url($url, PHP_URL_HOST);
+  $ips = gethostbynamel($host) ?: [null];
+  shuffle($ips);
+  foreach ($ips as $ip) {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+      CURLOPT_POST => true,
+      CURLOPT_POSTFIELDS => json_encode($data, JSON_UNESCAPED_UNICODE),
+      CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_CONNECTTIMEOUT => 3,
+      CURLOPT_TIMEOUT => $timeout,
+      CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+    ] + ($ip ? [CURLOPT_RESOLVE => ["$host:443:$ip"]] : []));
+    $res = curl_exec($ch);
+    $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0;
+    curl_close($ch);
+    if ($res !== false) return (bool)(json_decode($res, true)['ok'] ?? false);
+    if ($connected) return false;
+  }
+  return false;
 }
 
 // 1. Через Vercel
