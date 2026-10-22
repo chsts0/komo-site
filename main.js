@@ -147,6 +147,14 @@
 
   // Отправка анкет
   document.querySelectorAll('form.form').forEach((form) => {
+    const consentBox = form.querySelector('.consent input');
+    if (consentBox) consentBox.addEventListener('change', () => {
+      if (!consentBox.checked) return;
+      consentBox.closest('.consent').classList.remove('is-err');
+      const status = form.querySelector('.form__status');
+      if (status.classList.contains('is-err')) { status.textContent = ''; status.classList.remove('is-err'); }
+    });
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const status = form.querySelector('.form__status');
@@ -161,6 +169,15 @@
       });
       if (!valid) {
         status.textContent = 'Заполните имя и контакт, чтобы мы могли ответить.';
+        status.classList.add('is-err');
+        return;
+      }
+
+      // Без отдельного согласия на обработку ПД анкету не отправляем
+      const consent = form.querySelector('.consent');
+      if (consent && !consent.querySelector('input').checked) {
+        consent.classList.add('is-err');
+        status.textContent = 'Отметьте согласие на обработку персональных данных.';
         status.classList.add('is-err');
         return;
       }
